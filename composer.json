@@ -1,0 +1,17 @@
+{
+    "name": "domraider/rxnet-workshop",
+    "description": "Workshop about rxnet",
+    "require": {
+        "domraider/rxnet": "dev-master"
+    },
+    "authors": [
+        {
+            "name": "Vincent Vermersch",
+            "email": "vermersch@gmail.com"
+        },
+        {
+            "name": "Etienne Roudeix",
+            "email": "etienne.roudeix@gmail.com"
+        }
+    ]
+}
