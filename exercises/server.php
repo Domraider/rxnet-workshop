@@ -61,9 +61,30 @@ $httpd->route('GET', '/foobar', function(\Rxnet\Httpd\HttpdRequest $request, \Rx
     ]);
 });
 
-$httpd->route('GET', '/barfoo', function(\Rxnet\Httpd\HttpdRequest $request, \Rxnet\Httpd\HttpdResponse $response) {
+$i = 0;
+$httpd->route('GET', '/barfoo', function(\Rxnet\Httpd\HttpdRequest $request, \Rxnet\Httpd\HttpdResponse $response) use (&$i) {
+    if ($i < 2) {
+        printf("/barfoo returns error\n");
+        $response->sendError('Something went wrong');
+        $i++;
+        return;
+    }
+    $i = 0;
     printf("Return /barfoo results\n");
-    $response->sendError('Something went wrong');
+    $response->json([
+        [
+            'id' => 1,
+            'value' => 'barfoo1',
+        ],
+        [
+            'id' => 2,
+            'value' => 'barfoo2',
+        ],
+        [
+            'id' => 3,
+            'value' => 'barfoo3',
+        ],
+    ]);
 });
 
 $httpd->listen(23080);
