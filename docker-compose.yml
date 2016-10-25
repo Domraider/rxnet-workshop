@@ -1,0 +1,23 @@
+redis:
+  image: redis:latest
+  ports:
+    - 6379:6379
+rabbit:
+  image: rabbitmq:3-management
+  ports:
+    - 5672:5672
+    - 15672:15672
+real_life:
+  image: vinceve/php7:latest
+  volumes:
+    - ~/Sites/rxnet-workshop:/code
+  ports:
+    - 24080:24080
+  command: php /code/exercises/random_server.php
+bisounours:
+  image: vinceve/php7:latest
+  volumes:
+    - ~/Sites/rxnet-workshop:/code
+  ports:
+    - 23080:23080
+  command: php /code/exercises/server.php
