@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../bootstrap.php';
 
-class Exercise2Producer
+class Exercise3Producer
 {
     protected $loop;
     protected $scheduler;
@@ -88,5 +88,5 @@ class Exercise2Producer
     }
 }
 
-$main = new Exercise2Producer();
+$main = new Exercise3Producer();
 $main->run();
