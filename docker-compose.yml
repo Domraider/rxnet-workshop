@@ -7,20 +7,6 @@ rabbit:
   ports:
     - 5672:5672
     - 15672:15672
-real_life:
-  image: vinceve/php7:latest
-  volumes:
-    - ~/Sites/rxnet-workshop:/code
-  ports:
-    - 24080
-  command: php /code/exercises/random_server.php
-bisounours:
-  image: vinceve/php7:latest
-  volumes:
-    - ~/Sites/rxnet-workshop:/code
-  ports:
-    - 23080
-  command: php /code/exercises/server.php
 balancer:
   image: vinceve/haproxy
   volumes:
@@ -31,3 +17,17 @@ balancer:
   links:
     - real_life
     - bisounours
+real_life:
+  image: vinceve/php7:latest
+  volumes:
+    - ~/Sites/rxnet-workshop:/code
+  ports:
+    - 24080
+  command: php /code/exercises/servers/random_server.php
+bisounours:
+  image: vinceve/php7:latest
+  volumes:
+    - ~/Sites/rxnet-workshop:/code
+  ports:
+    - 23080
+  command: php /code/exercises/servers/server.php
