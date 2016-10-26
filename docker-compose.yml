@@ -7,16 +7,6 @@ rabbit:
   ports:
     - 5672:5672
     - 15672:15672
-balancer:
-  image: vinceve/haproxy
-  volumes:
-    - ~/Sites/rxnet-workshop/haproxy:/etc/haproxy
-  ports:
-    - 1936:1936
-    - 23080:80
-  links:
-    - real_life
-    - bisounours
 real_life:
   image: vinceve/php7:latest
   volumes:
@@ -31,3 +21,13 @@ bisounours:
   ports:
     - 23080
   command: php /code/exercises/server.php
+balancer:
+  image: vinceve/haproxy
+  volumes:
+    - ~/Sites/rxnet-workshop/haproxy:/etc/haproxy
+  ports:
+    - 1936:1936
+    - 23080:80
+  links:
+    - real_life
+    - bisounours
