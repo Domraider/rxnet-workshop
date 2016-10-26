@@ -1,65 +1,52 @@
 <?php
-use Rxnet\RabbitMq\RabbitMessage;
-
 require_once __DIR__ . '/../bootstrap.php';
+require_once __DIR__ . '/class_loader.php';
 
-class Exercise3Consumer
-{
-    protected $loop;
-    protected $scheduler;
-    protected $http;
-    protected $httpd;
-    /** @var \Rxnet\Redis\Redis  */
-    protected $redis;
-    /** @var \Rxnet\RabbitMq\RabbitMq  */
-    protected $rabbit;
-    /** @var  \Rxnet\RabbitMq\RabbitQueue */
-    protected $queue;
+$loop = EventLoop\getLoop();
 
-    public function __construct()
-    {
-        $this->loop = EventLoop\getLoop();
+$scheduler = new \Rx\Scheduler\EventLoopScheduler($loop);
 
-        $this->scheduler = new \Rx\Scheduler\EventLoopScheduler($this->loop);
+$httpd = new \Rxnet\Httpd\Httpd();
 
-        $this->http = new \Rxnet\Http\Http();
-        $this->httpd = new \Rxnet\Httpd\Httpd();
+$redisConn = RedisConnector::connect()
+    ->doOnError(function (\Exception $e) {
+        printf("[%s]Failed to connect to Redis : %s\n", date('H:i:s'), $e->getMessage());
+    })
+    ->doOnNext(function () {
+        echo "Redis is connected\n";
+    });
 
-        $this->redis = new \Rxnet\Redis\Redis();
+$rabbitConn = RabbitConnector::connect()
+    ->doOnError(function (\Exception $e) {
+        printf("[%s]Failed to connect to Rabbit : %s\n", date('H:i:s'), $e->getMessage());
+    })
+    ->doOnNext(function () {
+        echo "RabbitMq is connected\n";
+    });
 
-        $this->rabbit = new \Rxnet\RabbitMq\RabbitMq('rabbit://guest:guest@127.0.0.1:5672/', new \Rxnet\Serializer\Serialize());
-    }
 
-    public function run()
-    {
-        // connect rethink
-        $this->redis->connect('localhost:6379')
-            ->doOnNext(function () {
-                echo "Redis is connected\n";
-            })
-            ->zip([
-                // connect rabbit and create queue + exchange if not exist
-                $this->rabbit->connect()
-                    ->doOnNext(function () {
-                        $this->queue = $this->rabbit->queue('test_queue', 'amq.direct', []);
-                        echo "Rabbit is connected\n";
-                    })
-            ])
-            ->subscribeCallback(function () {
-                // run httpd server
-                $this->queue->consume()
-                    ->subscribeCallback(function (RabbitMessage $message) {
-                        $data = $message->getData();
-                        // todo call http exercise 1 ?
+$redisConn->zip([$rabbitConn])
+    ->subscribeCallback(
+        function ($connData) use ($httpd, $loop, $scheduler) {
+            RabbitConnector::getQueue()->consume()
+                ->doOnNext(function (\Rxnet\RabbitMq\RabbitMessage $message) {
+                    $data = $message->getData();
+                    printf("[%s]Consumed rabbit :\n", date('H:i:s'));
+                    var_dump($data);
+                })
+                ->map(function (\Rxnet\RabbitMq\RabbitMessage $message) {
+                    return $message->getData();
+                })
+                ->flatMap(new ScrapRoute($connData[0]))
+                ->subscribeCallback(function ($data) {
+                    printf("[%s]Scrapped data :\n", date('H:i:s'));
+                    var_dump($data);
+                    //$message->ack(); todo
+                });
+        },
+        null,
+        null,
+        $scheduler
+);
 
-                        // Do what you want but do one of this to get next
-                        //$message->ack();
-                    });
-            });
-
-        $this->loop->run();
-    }
-}
-
-$main = new Exercise3Consumer();
-$main->run();
+$loop->run();

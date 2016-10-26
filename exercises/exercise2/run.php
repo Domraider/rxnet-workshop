@@ -8,16 +8,32 @@ $scheduler = new \Rx\Scheduler\EventLoopScheduler($loop);
 
 $httpd = new \Rxnet\Httpd\Httpd();
 
-$redis = new \Rxnet\Redis\Redis();
-$redis->connect('localhost:6379')
+RedisConnector::connect()
+    ->doOnError(function (\Exception $e) {
+        printf("[%s]Failed to connect to Redis : %s\n", date('H:i:s'), $e->getMessage());
+    })
     ->doOnNext(function () {
         echo "Redis is connected\n";
-    })->subscribeCallback(function () use ($httpd, $loop, $scheduler, $redis) {
-        $httpd->route('GET', '/scrap/{item}', new ScrapRoute($loop, $redis));
+    })->subscribeCallback(
+        function ($redis) use ($httpd, $loop, $scheduler) {
+            $httpd->route(
+                'GET', '/scrap/{item}',
+                function (\Rxnet\Httpd\HttpdRequest $request, \Rxnet\Httpd\HttpdResponse $response) use ($scheduler, $redis) {
+                    $route = new ScrapRoute($redis);
+                    return $route->__invoke($request->getRouteParam('item'))
+                        ->doOnNext(function ($data) use ($response) {
+                            $response->json($data);
+                        })
+                        ->subscribeCallback(
+                            null, null, null,
+                            $scheduler
+                        );
+                }
+            );
 
-        $httpd->listen(21002);
-        printf("[%s]Server Listening on 21002\nUse : curl 127.0.0.1:21000/scrap/word_to_scrap\n", date('H:i:s'));
-    }
+            $httpd->listen(21002);
+            printf("[%s]Server Listening on 21002\nUse : curl 127.0.0.1:21002/scrap/word_to_scrap\n", date('H:i:s'));
+        }
     );
 
 $loop->run();

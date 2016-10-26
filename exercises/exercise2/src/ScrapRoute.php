@@ -1,24 +1,20 @@
 <?php
 class ScrapRoute
 {
-    /** @var \React\EventLoop\LoopInterface  */
-    protected $loop;
     /** @var \Rxnet\Http\Http  */
     protected $http;
     /** @var \Rxnet\Redis\Redis  */
     protected $redis;
 
-    public function __construct(\React\EventLoop\LoopInterface $loop, \Rxnet\Redis\Redis $redis)
+    public function __construct(\Rxnet\Redis\Redis $redis)
     {
-        $this->loop = $loop;
         $this->redis = $redis;
 
         $this->http = new \Rxnet\Http\Http();
     }
 
-    public function __invoke(\Rxnet\Httpd\HttpdRequest $request, \Rxnet\Httpd\HttpdResponse $response)
+    public function __invoke($queryItem)
     {
-        $queryItem = $request->getRouteParam('item');
         $checkError = function (\GuzzleHttp\Psr7\Response $response) {
             $statusCode = $response->getStatusCode();
             if ($statusCode < 200 || $statusCode >= 300) {
@@ -54,7 +50,7 @@ class ScrapRoute
 
         $result = $query1->zip([$query2, $query3, $query4]);
 
-        $result
+        return $result
             ->map(function ($data) {
                 // global map
                 foreach ($data as $i => $item) {
@@ -63,17 +59,10 @@ class ScrapRoute
                 }
                 return $data;
             })
-            ->doOnNext(function ($data) use ($response) {
-                $response->json($data);
-            })
-            ->flatMap(function ($data) use ($queryItem) {
+            ->doOnNext(function ($data) use ($queryItem) {
                 //save in redis
                 return $this->redis->set(sprintf('my_set:%s', $queryItem), json_encode($data));
-            })
-            ->subscribeCallback(
-                null, null, null,
-                new \Rx\Scheduler\EventLoopScheduler($this->loop)
-            );
+            });
 
     }
 }
