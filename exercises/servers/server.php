@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/../bootstrap.php';
 
 $loop = EventLoop\getLoop();
 
@@ -88,4 +88,5 @@ $httpd->route('GET', '/barfoo', function(\Rxnet\Httpd\HttpdRequest $request, \Rx
 });
 
 $httpd->listen(23080);
+printf("[%s]Server Listening on 23080\n", date('H:i:s'));
 $loop->run();

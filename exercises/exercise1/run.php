@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/../bootstrap.php';
 
 $loop = EventLoop\getLoop();
 
@@ -24,52 +24,80 @@ $redis->connect('localhost:6379')
                 return $response;
             };
 
-            $query1 = $http->get("http://127.0.0.1:23080/foo?item={$queryItem}")
-                ->timeout(30000)
+            $query1 = $http->get("http://127.0.0.1:24080/foo/{$queryItem}")
+                ->timeout(5000)
                 ->map($checkError)
                 ->retry(3)
                 ->map(function (\GuzzleHttp\Psr7\Response $response) {
+                    // specific map
+                    $result = json_decode($response->getBody(), true);
+                    printf("[%s]Got response for foo, took %s seconds\n", date('H:i:s'), substr($result['time'], 0, -1));
                     return [
                         'type' => 'foo',
-                        'result' => json_decode($response->getBody(), true),
+                        'result' => [
+                            'word' => $result['item'],
+                            'value' => $result['result']['value'],
+                            'data' => $result['result']['set'],
+                        ],
                     ];
-                    // specific map
                 });
 
-            $query2 = $http->get("http://127.0.0.1:23080/bar?item={$queryItem}")
-                ->timeout(30000)
+            $query2 = $http->get("http://127.0.0.1:24080/bar/{$queryItem}")
+                ->timeout(5000)
                 ->map($checkError)
                 ->retry(3)
                 ->map(function (\GuzzleHttp\Psr7\Response $response) {
+                    // specific map
+                    $result = json_decode($response->getBody(), true);
+                    printf("[%s]Got response for bar, took %s\n", date('H:i:s'), $result['took']);
                     return [
                         'type' => 'bar',
-                        'result' => json_decode($response->getBody(), true),
+                        'result' => [
+                            'word' => $result['query'],
+                            'value' => $result['result_value'],
+                            'data' => $result['result_set'],
+                        ],
                     ];
-                    // specific map
                 });
 
-            $query3 = $http->get("http://127.0.0.1:23080/foobar?item={$queryItem}")
-                ->timeout(30000)
+            $query3 = $http->get("http://127.0.0.1:24080/foobar/{$queryItem}")
+                ->timeout(5000)
                 ->map($checkError)
                 ->retry(3)
                 ->map(function (\GuzzleHttp\Psr7\Response $response) {
+                    // specific map
+                    $result = explode("\n", (string)$response->getBody());
+                    $meta = explode(":", $result[0]);
+                    $data = explode("%%", $result[1]);
+                    printf("[%s]Got response for foobar, took %s seconds\n", date('H:i:s'), $meta[2]);
                     return [
                         'type' => 'foobar',
-                        'result' => json_decode($response->getBody(), true),
+                        'result' => [
+                            'word' => $meta[1],
+                            'value' => $meta[3],
+                            'data' => $data,
+                        ],
                     ];
-                    // specific map
                 });
 
-            $query4 = $http->get("http://127.0.0.1:23080/barfoo?item={$queryItem}")
-                ->timeout(30000)
+            $query4 = $http->get("http://127.0.0.1:24080/barfoo/{$queryItem}")
+                ->timeout(5000)
                 ->map($checkError)
                 ->retry(3)
                 ->map(function (\GuzzleHttp\Psr7\Response $response) {
+                    // specific map
+                    $result = json_decode($response->getBody(), true);
+                    $key = key($result);
+                    $result = current($result);
+                    printf("[%s]Got response for barfoo, took %s seconds\n", date('H:i:s'), $result['time']);
                     return [
                         'type' => 'barfoo',
-                        'result' => json_decode($response->getBody(), true),
+                        'result' => [
+                            'word' => $key,
+                            'value' => $result['data']['value'],
+                            'data' => $result['data']['set'],
+                        ],
                     ];
-                    // specific map
                 });
 
             $result = $query1->zip([$query2, $query3, $query4]);
@@ -98,6 +126,7 @@ $redis->connect('localhost:6379')
         });
 
         $httpd->listen(21000);
+        printf("[%s]Server Listening on 21000\nUse : curl 127.0.0.1:21000/scrap/word_to_scrap\n", date('H:i:s'));
     }
 );
 

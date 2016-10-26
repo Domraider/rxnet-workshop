@@ -3,7 +3,7 @@ use Rxnet\RabbitMq\RabbitMessage;
 
 require_once __DIR__ . '/../bootstrap.php';
 
-class Exercise2Consumer
+class Exercise3Consumer
 {
     protected $loop;
     protected $scheduler;
@@ -61,5 +61,5 @@ class Exercise2Consumer
     }
 }
 
-$main = new Exercise2Consumer();
+$main = new Exercise3Consumer();
 $main->run();
