@@ -34,15 +34,25 @@ $redisConn->zip([$rabbitConn])
                     printf("[%s]Consumed rabbit :\n", date('H:i:s'));
                     var_dump($data);
                 })
-                ->map(function (\Rxnet\RabbitMq\RabbitMessage $message) {
-                    return $message->getData();
-                })
-                ->flatMap(new ScrapRoute($connData[0]))
-                ->subscribeCallback(function ($data) {
-                    printf("[%s]Scrapped data :\n", date('H:i:s'));
-                    var_dump($data);
-                    //$message->ack(); todo
-                });
+                ->subscribeCallback(
+                    function (\Rxnet\RabbitMq\RabbitMessage $message) use ($connData, $scheduler) {
+                        \Rx\Observable::just($message->getData())
+                            ->flatMap(new ScrapRoute($connData[0]))
+                            ->subscribeCallback(
+                                function ($data) use ($message) {
+                                    printf("[%s]Scrapped data :\n", date('H:i:s'));
+                                    var_dump($data);
+                                    $message->ack();
+                                },
+                                null,
+                                null,
+                                $scheduler
+                            );
+                    },
+                    null,
+                    null,
+                    $scheduler
+                );
         },
         null,
         null,
