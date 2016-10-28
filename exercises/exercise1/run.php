@@ -9,7 +9,7 @@ $http = new \Rxnet\Http\Http();
 $httpd = new \Rxnet\Httpd\Httpd();
 
 $redis = new \Rxnet\Redis\Redis();
-$redis->connect('localhost:6379')
+$redis->connect('redis://127.0.0.1:6379')
     ->doOnNext(function () {
         echo "Redis is connected\n";
     })->subscribeCallback(function () use ($httpd, $loop, $scheduler, $http, $redis) {
@@ -119,7 +119,9 @@ $redis->connect('localhost:6379')
                     return $redis->set(sprintf('my_set:%s', $queryItem), json_encode($data));
                 })
                 ->subscribeCallback(
-                    null, null, null,
+                    function ($setStatus) {
+                        printf("Saved in redis: %s", $setStatus);
+                    }, null, null,
                     $scheduler
                 );
 
@@ -127,7 +129,10 @@ $redis->connect('localhost:6379')
 
         $httpd->listen(21000);
         printf("[%s]Server Listening on 21000\nUse : curl 127.0.0.1:21000/scrap/word_to_scrap\n", date('H:i:s'));
-    }
+    },
+        function (\Exception $e) {
+            echo $e->getMessage()."\n";
+        }
 );
 
 $loop->run();
