@@ -26,6 +26,7 @@ $setTemplates = [
     'I hate %s',
     'I use to use %s',
     '%s is like %1$s',
+    'To %s or not to %1$s, that is the question',
 ];
 
 $httpd->route('GET', '/{format}/{item}', function(\Rxnet\Httpd\HttpdRequest $request, \Rxnet\Httpd\HttpdResponse $response) use ($loop, $setTemplates) {
