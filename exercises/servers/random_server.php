@@ -1,9 +1,9 @@
 <?php
 require_once __DIR__ . '/../bootstrap.php';
 
-define('FORMAT_1', 'foo');
-define('FORMAT_2', 'bar');
-define('FORMAT_3', 'foobar');
+define('FORMAT_1', 'f0o');
+define('FORMAT_2', 'b4r');
+define('FORMAT_3', 'f0ob4r');
 
 define('RESPONSE_TIME_MAX_S', 20);
 define('RESPONSE_TIME_OFFSET', 15);
@@ -26,13 +26,14 @@ $setTemplates = [
     'I hate %s',
     'I use to use %s',
     '%s is like %1$s',
+    'To %s or not to %1$s, that is the question',
 ];
 
 $httpd->route('GET', '/{format}/{item}', function(\Rxnet\Httpd\HttpdRequest $request, \Rxnet\Httpd\HttpdResponse $response) use ($loop, $setTemplates) {
     $format = $request->getRouteParam('format');
     $queryItem = $request->getRouteParam('item');
 
-    mt_srand();
+    mt_srand(time(), MT_RAND_MT19937);
 
     $id = microtime(true) * 10000 .  '-'  . $queryItem;
     printf("[%s][%d]Got Request /%s/%s\n", date('H:i:s'), $id, $format, $queryItem);
@@ -48,15 +49,25 @@ $httpd->route('GET', '/{format}/{item}', function(\Rxnet\Httpd\HttpdRequest $req
             // sometime fails
             $failurePick = mt_rand(1, 100);
             switch ($failurePick) {
-                case 10:
+                case 11:
+                case 12:
+                case 13:
+                case 14:
+                case 15:
                     printf("[%s][%d]Failed : 404 not found\n", date('H:i:s'), $id);
                     $response->sendError('Not found', 404);
                     return;
-                case 20:
+                case 21:
+                case 22:
+                case 23:
+                case 24:
+                case 25:
                     printf("[%s][%d]Failed : 500 internal server error\n", date('H:i:s'), $id);
                     $response->sendError('Internal server error', 500);
                     return;
-                case 30:
+                case 31:
+                case 32:
+                case 33:
                     printf("[%s][%d]Failed : 502 bad gateway\n", date('H:i:s'), $id);
                     $response->sendError('Bad gateway', 502);
                     return;
